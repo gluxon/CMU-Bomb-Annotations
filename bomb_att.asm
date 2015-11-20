@@ -821,6 +821,7 @@ Disassembly of section .text:
 
                                 // it appears that everything up until here is to make sure none
                                 // of the 6 numbers are equal to each other
+                                // and their values are also 1-6
 
           // PHASE 6 PART 2
 
@@ -830,13 +831,13 @@ Disassembly of section .text:
                                 // make ecx a pointer to the 6 numbers
  8048e04:	8d 4d e8             	lea    -0x18(%ebp),%ecx
 
-                                // Store pointer to ebp-0x30 in bbp-0x3c
-                                // note: it may be interesting later that 0x30-0x18 = 24 bytes, the size of our array
+                                // Store pointer to ebp-0x30 in ebp-0x3c
+                                // note: it may be interesting later that 0x30-0x18 = 24 bytes, the size of our input
  8048e07:	8d 45 d0             	lea    -0x30(%ebp),%eax
  8048e0a:	89 45 c4             	mov    %eax,-0x3c(%ebp)
 
                                 // NOP?
- 8048e0d:	8d 76 00             	lea    0x0(%esi),%esi
+ //8048e0d:	8d 76 00             	lea    0x0(%esi),%esi
 
                                 // while edi < 6 {
 
@@ -865,6 +866,8 @@ Disassembly of section .text:
                                   // } // while ebx < eax
    8048e34:	39 c3                	cmp    %eax,%ebx
    8048e36:	7c f8                	jl     8048e30 <phase_6+0x98>
+                                  // Generate list of pointers to the next item in the linked list
+                                  // based on which number was the next in the text input
 
                                   // ebp-0x3c has the pointer to ebp-0x30
    8048e38:	8b 55 c4             	mov    -0x3c(%ebp),%edx
@@ -876,15 +879,14 @@ Disassembly of section .text:
  8048e3f:	83 ff 05             	cmp    $0x5,%edi
  8048e42:	7e cc                	jle    8048e10 <phase_6+0x78>
 
+// 0x804b26c:	0x000000fd	0x00000001	0x0804b260   = 253
+// 0x804b260:	0x000002d5	0x00000002	0x0804b254   = 725
+// 0x804b254:	0x0000012d	0x00000003	0x0804b248   = 301
+// 0x804b248:	0x000003e5	0x00000004	0x0804b23c   = 997
+// 0x804b23c:	0x000000d4	0x00000005	0x0804b230   = 212
+// 0x804b230:	0x000001b0	0x00000006	0x00000000   = 432
 
-// 0x804b26c:	0x000000fd	0x00000001	0x0804b260
-// 0x804b260:	0x000002d5	0x00000002	0x0804b254
-// 0x804b254:	0x0000012d	0x00000003	0x0804b248
-// 0x804b248:	0x000003e5	0x00000004	0x0804b23c
-// 0x804b23c:	0x000000d4	0x00000005	0x0804b230
-// 0x804b230:	0x000001b0	0x00000006	0x00000000
-
-            // Phase 6: Part 3?
+            // Phase 6: Part 3
 
                                 // esi is now a pointer to the array of pointers to the linked list item
  8048e44:	8b 75 d0             	mov    -0x30(%ebp),%esi
@@ -893,37 +895,47 @@ Disassembly of section .text:
  8048e47:	89 75 cc             	mov    %esi,-0x34(%ebp)
 
  8048e4a:	bf 01 00 00 00       	mov    $0x1,%edi
- 8048e4f:	8d 55 d0             	lea    -0x30(%ebp),%edx
-
+ 8048e4f:	8d 55 d0             	lea    -0x30(%ebp),%edx // edx is now pointer to the array
                                 // while edi <= 5 {
-
-
    8048e52:	8b 04 ba             	mov    (%edx,%edi,4),%eax
    8048e55:	89 46 08             	mov    %eax,0x8(%esi)
    8048e58:	89 c6                	mov    %eax,%esi
+
    8048e5a:	47                   	inc    %edi
    8048e5b:	83 ff 05             	cmp    $0x5,%edi
    8048e5e:	7e f2                	jle    8048e52 <phase_6+0xba>
+                                  // Update the next item in the linked list to be the one
+                                  // specified by our text input
                                 // } // while edi <= 5
 
- 8048e60:	c7 46 08 00 00 00 00 	movl   $0x0,0x8(%esi)
- 8048e67:	8b 75 cc             	mov    -0x34(%ebp),%esi
- 8048e6a:	31 ff                	xor    %edi,%edi
+ 8048e60:	c7 46 08 00 00 00 00 	movl   $0x0,0x8(%esi) // terminate linked list
+ 8048e67:	8b 75 cc             	mov    -0x34(%ebp),%esi // Make esi the beginning of the linked list
+ 8048e6a:	31 ff                	xor    %edi,%edi // clear edi
+
+                                // noop
  8048e6c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
 
- 8048e70:	8b 56 08             	mov    0x8(%esi),%edx
- 8048e73:	8b 06                	mov    (%esi),%eax
 
-                                // if eax < &edx, explode
- 8048e75:	3b 02                	cmp    (%edx),%eax
- 8048e77:	7d 05                	jge    8048e7e <phase_6+0xe6>
- 8048e79:	e8 7e 06 00 00       	call   80494fc <explode_bomb>
 
- 8048e7e:	8b 76 08             	mov    0x8(%esi),%esi
 
- 8048e81:	47                   	inc    %edi
- 8048e82:	83 ff 04             	cmp    $0x4,%edi
- 8048e85:	7e e9                	jle    8048e70 <phase_6+0xd8>
+         // Phase 6: Part 4
+
+
+                                // while edi <= 4 {
+   8048e70:	8b 56 08             	mov    0x8(%esi),%edx // copy the pointer to second element into edx
+   8048e73:	8b 06                	mov    (%esi),%eax // copy the value of the first element into eax
+
+                                  // if eax < &edx, explode
+   8048e75:	3b 02                	cmp    (%edx),%eax
+   8048e77:	7d 05                	jge    8048e7e <phase_6+0xe6>
+   8048e79:	e8 7e 06 00 00       	call   80494fc <explode_bomb>
+
+   8048e7e:	8b 76 08             	mov    0x8(%esi),%esi
+
+   8048e81:	47                   	inc    %edi
+   8048e82:	83 ff 04             	cmp    $0x4,%edi
+   8048e85:	7e e9                	jle    8048e70 <phase_6+0xd8>
+                                // } // while edi <= 4
 
                                 // WINNNNNN!!!!
  8048e87:	8d 65 a8             	lea    -0x58(%ebp),%esp
